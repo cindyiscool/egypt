@@ -1,0 +1,688 @@
+/* ==========================================
+   STYLE RULES - EGYPTIAN VISUAL NOVEL
+   ========================================== */
+
+/* --- RESET & CẤU HÌNH BAN ĐẦU --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    background-color: #0b0805;
+    color: #f5eedc;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* --- GAME CONTAINER (TỶ LỆ KHUNG HÌNH 16:9 CHUẨN VISUAL NOVEL) --- */
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 56.25vw; /* 16:9 aspect ratio */
+    max-width: 1200px;
+    max-height: 675px;
+    background-color: #120e0a;
+    border: 4px solid #cf9e2b;
+    box-shadow: 0 0 30px rgba(207, 158, 43, 0.3);
+    overflow: hidden;
+}
+
+/* responsive fallback cho các màn hình tỷ lệ khác */
+@media (min-aspect-ratio: 16/9) {
+    #game-container {
+        width: 177.78vh;
+        height: 100vh;
+    }
+}
+
+/* --- QUẢN LÝ MÀN HÌNH (PAGES) --- */
+.page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.page.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- HỆ THỐNG NỀN (BACKGROUNDS) --- */
+.page-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+}
+
+/* Nếu không có ảnh nền, tự động tạo các lớp gradient huyền bí chủ đề Ai Cập */
+#page-1 .page-background {
+    background: url('backgroundpage1.png') center/cover no-repeat, linear-gradient(135deg, #1f140a 0%, #0d0602 100%);
+}
+#page-2 .page-background {
+    background: url('backgroundpage2.png') center/cover no-repeat, linear-gradient(180deg, #1c130d 0%, #0c0805 100%);
+}
+#page-3 .page-background {
+    background: url('backgroundpage3.png') center/cover no-repeat, linear-gradient(180deg, #1a1612 0%, #090807 100%);
+}
+#page-win .page-background {
+    background: url('backgroundwin.png') center/cover no-repeat, radial-gradient(circle, #38290f 0%, #0a0805 100%);
+}
+#page-lose .page-background {
+    background: url('backgroundpage5.png') center/cover no-repeat, linear-gradient(180deg, #1a0e0e 0%, #080303 100%);
+}
+
+.content-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 2% 5%;
+}
+
+/* --- FALLBACK PLACEHOLDERS (KHI CHƯA CÓ FILE ẢNH) --- */
+.fallback-placeholder {
+    display: none; /* Chỉ hiển thị qua script onerror */
+    width: 100%;
+    height: 100%;
+    background: rgba(18, 14, 10, 0.85);
+    border: 2px dashed #cf9e2b;
+    border-radius: 8px;
+    color: #e6c35c;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    text-align: center;
+    padding: 10px;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 5px rgba(207, 158, 43, 0.5);
+    box-shadow: inset 0 0 15px rgba(207, 158, 43, 0.2);
+    text-transform: uppercase;
+}
+
+/* ==========================================
+   PHÂN CHIA GIAO DIỆN CỦA TỪNG TRANG
+   ========================================== */
+
+/* --- TRANG CHỦ (PAGE 1) --- */
+.logo-wrapper {
+    width: 60%;
+    height: 40%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.game-logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.logo-fallback {
+    font-size: 32px;
+    border: 3px solid #cf9e2b;
+    letter-spacing: 4px;
+    border-radius: 0;
+    clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+}
+
+.game-btn-img {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 250px;
+    height: 80px;
+    outline: none;
+    transition: transform 0.2s, filter 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-btn-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.game-btn-img:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 8px rgba(230, 195, 92, 0.7));
+}
+
+.btn-fallback {
+    font-size: 18px;
+    border: 2px solid #cf9e2b;
+    background: linear-gradient(135deg, #1b263b 0%, #0f172a 100%);
+    color: #ffffff;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* --- TRANG NÓI CHUYỆN & CÂU HỎI (PAGES 2 & 3) --- */
+
+/* Nhân vật (Phía bên trái) */
+.character-container {
+    position: absolute;
+    bottom: 0;
+    left: 4%;
+    width: 25%;
+    height: 80%;
+    z-index: 5;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.character-img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(5px 5px 15px rgba(0, 0, 0, 0.6));
+    animation: slideInFromLeft 0.5s ease-out;
+}
+
+.char-fallback {
+    height: 90%;
+    font-size: 24px;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, #1f2d3d 0%, #0f172a 100%);
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Hộp thoại cốt truyện ở dưới cùng */
+.dialogue-box-wrapper {
+    position: absolute;
+    bottom: 3%;
+    left: 5%;
+    right: 5%;
+    height: 25%;
+    z-index: 10;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dialogue-bg-container, .quiz-bg-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.dialogue-bg, .quiz-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dialogue-content {
+    position: relative;
+    z-index: 2;
+    padding: 2% 4%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.dialogue-text {
+    font-family: 'Lora', serif;
+    font-size: 17px;
+    line-height: 1.5;
+    color: #f7edd7;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.dialog-fallback {
+    background: rgba(167, 29, 49, 0.95); /* Màu đỏ gạch của Canva trang 2 */
+    border: 3px solid #000;
+    color: #ffffff;
+    font-size: 20px;
+    border-radius: 0;
+}
+
+.next-btn {
+    align-self: flex-end;
+    background: linear-gradient(180deg, #0d3b66 0%, #052240 100%);
+    border: 2px solid #cf9e2b;
+    color: #e6c35c;
+    padding: 6px 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.next-btn:hover {
+    background: linear-gradient(180deg, #1b4e7e 0%, #0d3b66 100%);
+    transform: translateY(-2px);
+}
+
+/* --- TRANG HỎI ĐÁP (PAGE 3 - QUIZ) --- */
+
+.quiz-box-wrapper {
+    position: absolute;
+    bottom: 3%;
+    left: 5%;
+    right: 5%;
+    height: 38%; /* Cao hơn tí để chứa câu hỏi + 4 đáp án */
+    z-index: 10;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.quiz-fallback {
+    background: rgba(167, 29, 49, 0.95); /* Màu đỏ gạch Canva */
+    border: 3px solid #000;
+}
+
+.quiz-content {
+    position: relative;
+    z-index: 2;
+    padding: 1.5% 3%;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    row-gap: 10px;
+}
+
+.question-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0, 62, 126, 0.85); /* Lapis Blue */
+    border: 2px solid #cf9e2b;
+    padding: 8px 15px;
+    border-radius: 4px;
+}
+
+.question-num-tag {
+    font-family: 'Cinzel', serif;
+    color: #e6c35c;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.question-box h2 {
+    font-size: 15px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+/* Lưới đáp án 2x2 */
+.answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+}
+
+.answer-btn {
+    position: relative;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 20px;
+    transition: transform 0.2s;
+}
+
+.answer-bg-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.answer-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+.answer-fallback {
+    background: rgba(0, 62, 126, 0.95); /* Màu xanh lam Canva */
+    border: 2.5px solid #000;
+    border-radius: 0;
+    color: #ffffff;
+    font-weight: bold;
+    justify-content: flex-start;
+    padding-left: 20px;
+}
+
+.answer-text {
+    position: relative;
+    z-index: 2;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Hiệu ứng di chuột vào đáp án */
+.answer-btn:hover {
+    transform: scale(1.02);
+}
+
+.answer-btn:hover .answer-fallback {
+    border-color: #cf9e2b;
+    box-shadow: 0 0 10px rgba(207, 158, 43, 0.6);
+}
+
+/* Tích xanh lá cây (Đúng) và X đỏ (Sai) */
+.check-icon {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%) scale(0);
+    z-index: 5;
+    font-size: 22px;
+    font-weight: bold;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.correct-icon {
+    color: #2ec4b6;
+    text-shadow: 0 0 8px rgba(46, 196, 182, 0.8);
+}
+
+.incorrect-icon {
+    color: #e71d36;
+    text-shadow: 0 0 8px rgba(231, 29, 54, 0.8);
+}
+
+/* Khi người dùng click */
+.answer-btn.correct .correct-icon {
+    transform: translateY(-50%) scale(1.2);
+}
+
+.answer-btn.correct .answer-fallback {
+    border-color: #2ec4b6;
+    background: rgba(10, 50, 45, 0.9);
+}
+
+.answer-btn.incorrect .incorrect-icon {
+    transform: translateY(-50%) scale(1.2);
+}
+
+.answer-btn.incorrect .answer-fallback {
+    border-color: #e71d36;
+    background: rgba(60, 15, 20, 0.9);
+}
+
+/* Trạng thái sai rồi (Nhân vật phản hồi) */
+.quiz-wrong-feedback {
+    position: relative;
+    z-index: 2;
+    padding: 3%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feedback-box {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.text-wrong {
+    font-family: 'Cinzel', serif;
+    color: #e71d36;
+    font-size: 32px;
+    text-shadow: 0 0 10px rgba(231,29,54,0.5);
+    animation: shake 0.5s;
+}
+
+.feedback-subtext {
+    font-size: 16px;
+    color: #f7edd7;
+}
+
+/* --- MẠNG / TRÁI TIM (HEARTS SYSTEM) --- */
+#hearts-container {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    z-index: 100;
+    display: flex;
+    gap: 12px;
+}
+
+.heart {
+    font-size: 28px;
+    filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
+    transition: transform 0.3s ease, opacity 0.5s ease;
+}
+
+.heart.broken {
+    transform: scale(0.6) rotate(15deg);
+    opacity: 0.2;
+    animation: breakHeart 0.5s forwards;
+}
+
+/* --- TRANG THẮNG (PAGE WIN) --- */
+.win-content-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3% 5%;
+}
+
+.congrats-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 280px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.congrats-btn-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.congrats-btn:hover {
+    transform: scale(1.08);
+}
+
+.congrats-fallback {
+    background: #e71d36; /* Đỏ hồng Canva trang 4 */
+    border: 3.5px solid #000;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 0;
+    letter-spacing: 2px;
+}
+
+.chest-wrapper {
+    width: 260px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chest-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 15px rgba(230, 195, 92, 0.6));
+}
+
+.chest-fallback {
+    background: #003e7e; /* Xanh lục Canva trang 4 */
+    border: 3.5px solid #000;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 0;
+}
+
+.win-dialog-box {
+    width: 100%;
+    height: 25%;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.win-fallback {
+    background: #ffb703; /* Vàng đậm Canva trang 4 */
+    border: 3.5px solid #000;
+    color: #000000;
+    font-size: 24px;
+    font-weight: 800;
+    border-radius: 0;
+}
+
+.restart-btn {
+    align-self: center;
+    background: linear-gradient(180deg, #d4af37 0%, #aa841c 100%);
+    border: 2px solid #ffffff;
+    color: #0b0805;
+    font-weight: 700;
+    padding: 8px 24px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(212,175,55,0.3);
+    margin-top: 10px;
+}
+
+.restart-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(180deg, #f3d065 0%, #d4af37 100%);
+}
+
+/* --- TRANG THUA (PAGE LOSE) --- */
+.lose-fallback {
+    background: #0d3b66; /* Xanh biển sẫm Canva trang 5 */
+    border: 3.5px solid #000;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 800;
+    border-radius: 0;
+}
+
+/* ==========================================
+   HIỆU ỨNG ĐỘNG (ANIMATIONS)
+   ========================================== */
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-50px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes breakHeart {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.4);
+        filter: saturate(2) drop-shadow(0 0 10px rgba(255,0,0,1));
+    }
+    100% {
+        transform: scale(0.6) rotate(20deg);
+        opacity: 0.2;
+    }
+}
+
+/* --- FONT ĐỌC TỐT --- */
+.font-readable {
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+}
+
+.text-egypt {
+    color: #fffde6;
+}
