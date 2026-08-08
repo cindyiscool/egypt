@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Egyptian Visual Novel</title>
+    <!-- Nhúng font chữ Google để giao diện trông cao cấp và dễ đọc -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Lora:ital,wght@0,500;0,700;1,500&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Thư viện Confetti cho màn hình chiến thắng -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <!-- Container chính để giữ game cố định tỷ lệ khung hình hoặc co giãn mượt mà -->
+    <div id="game-container">
+
+        <!-- Hệ thống hiển thị Mạng/Trái tim ở góc trên bên phải (chỉ hiện từ Trang 3 trở đi) -->
+        <div id="hearts-container" class="hidden">
+            <div class="heart" id="heart-1">❤️</div>
+            <div class="heart" id="heart-2">❤️</div>
+            <div class="heart" id="heart-3">❤️</div>
+            <div class="heart" id="heart-4">❤️</div>
+        </div>
+
+        <!-- ================= PAGE 1: TRANG CHỦ ================= -->
+        <div id="page-1" class="page active">
+            <!-- Nền trang chủ: backgroundpage1 -->
+            <div class="page-background" data-bg="backgroundpage1"></div>
+            
+            <div class="content-wrapper">
+                <!-- LOGO Game: Logo -->
+                <div class="logo-wrapper">
+                    <img src="Logo.png" class="game-logo" alt="Logo Game" onerror="handleImageError(this, 'Logo.png')">
+                    <div class="fallback-placeholder logo-fallback">LOGO GAME</div>
+                </div>
+
+                <!-- Nút bắt đầu: buttonpage1 -->
+                <button id="btn-start" class="game-btn-img">
+                    <img src="buttonpage1.png" alt="Nút bấm" onerror="handleImageError(this, 'buttonpage1.png')">
+                    <div class="fallback-placeholder btn-fallback">Nút bấm</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 2: NÓI CHUYỆN ================= -->
+        <div id="page-2" class="page">
+            <div class="page-background" data-bg="backgroundpage2"></div>
+
+            <!-- Nhân vật: characterimagepage2 -->
+            <div class="character-container left">
+                <img src="characterimagepage2.png" alt="Character Dialogue" class="character-img" onerror="handleImageError(this, 'characterimagepage2.png')">
+                <div class="fallback-placeholder char-fallback">character</div>
+            </div>
+
+            <!-- Hộp thoại nói chuyện: scriptbackgroundpage2 -->
+            <div class="dialogue-box-wrapper">
+                <div class="dialogue-bg-container">
+                    <img src="scriptbackgroundpage2.png" alt="Script Background" class="dialogue-bg" onerror="handleImageError(this, 'scriptbackgroundpage2.png')">
+                    <div class="fallback-placeholder dialog-fallback">Nói chuyện</div>
+                </div>
+                <div class="dialogue-content">
+                    <p class="dialogue-text">Chào mừng nhà thám hiểm đến với thế giới Ai Cập cổ đại huyền bí! Hãy cùng tôi giải mã 10 câu đố cổ xưa để tìm ra kho báu nhé. Bạn đã sẵn sàng chưa?</p>
+                    <button id="btn-to-quiz" class="next-btn">NEXT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 3: CÂU HỎI ================= -->
+        <div id="page-3" class="page">
+            <div class="page-background" data-bg="backgroundpage3"></div>
+
+            <!-- Nhân vật: characterimagepage3 -->
+            <div class="character-container left">
+                <img src="characterimagepage3.png" alt="Character Quiz" class="character-img" onerror="handleImageError(this, 'characterimagepage3.png')">
+                <div class="fallback-placeholder char-fallback">character</div>
+            </div>
+
+            <!-- Hộp câu hỏi & Đáp án: scriptbackgroundpage3 -->
+            <div class="quiz-box-wrapper">
+                <div class="quiz-bg-container">
+                    <img src="scriptbackgroundpage3.png" alt="Script Background 3" class="quiz-bg" onerror="handleImageError(this, 'scriptbackgroundpage3.png')">
+                    <div class="fallback-placeholder quiz-fallback">nền cho câu hỏi (scriptbackgroundpage3)</div>
+                </div>
+                
+                <!-- Giao diện chính của câu hỏi và đáp án -->
+                <div class="quiz-content" id="quiz-main-layout">
+                    <!-- Ô chứa câu hỏi -->
+                    <div class="question-box">
+                        <span class="question-num-tag">Câu hỏi <span id="current-question-num">1</span>/10:</span>
+                        <h2 id="question-text" class="text-egypt font-readable">Câuhỏi</h2>
+                    </div>
+
+                    <!-- Lưới câu trả lời (4 nút bấm) -->
+                    <div class="answers-grid">
+                        <button class="answer-btn" data-choice="A">
+                            <div class="answer-bg-container">
+                                <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
+                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                            </div>
+                            <span class="answer-text">A. ĐápánA</span>
+                            <span class="check-icon correct-icon">✔</span>
+                            <span class="check-icon incorrect-icon">✖</span>
+                        </button>
+                        <button class="answer-btn" data-choice="B">
+                            <div class="answer-bg-container">
+                                <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
+                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                            </div>
+                            <span class="answer-text">B. ĐápánB</span>
+                            <span class="check-icon correct-icon">✔</span>
+                            <span class="check-icon incorrect-icon">✖</span>
+                        </button>
+                        <button class="answer-btn" data-choice="C">
+                            <div class="answer-bg-container">
+                                <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
+                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                            </div>
+                            <span class="answer-text">C. ĐápánC</span>
+                            <span class="check-icon correct-icon">✔</span>
+                            <span class="check-icon incorrect-icon">✖</span>
+                        </button>
+                        <button class="answer-btn" data-choice="D">
+                            <div class="answer-bg-container">
+                                <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
+                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                            </div>
+                            <span class="answer-text">D. ĐápánD</span>
+                            <span class="check-icon correct-icon">✔</span>
+                            <span class="check-icon incorrect-icon">✖</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Màn hình trạng thái phụ khi chọn SAI (Nhân vật bảo Sai rồi) -->
+                <div class="quiz-wrong-feedback hidden" id="quiz-wrong-layout">
+                    <div class="feedback-box">
+                        <h2 class="text-wrong font-readable">Sai rồi!</h2>
+                        <p class="feedback-subtext">Bạn đã bị trừ một trái tim!</p>
+                        <button id="btn-next-after-wrong" class="next-btn">TIẾP TỤC</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE WIN: THẮNG ================= -->
+        <div id="page-win" class="page">
+            <!-- Nền thắng: backgroundwin -->
+            <div class="page-background" data-bg="backgroundwin"></div>
+
+            <div class="win-content-wrapper">
+                <!-- NÚT CHÚC MỪNG ở phía trên -->
+                <button id="btn-congrats" class="congrats-btn">
+                    <img src="congratsbutton.png" alt="Nút chúc mừng" class="congrats-btn-img" onerror="handleImageError(this, 'congratsbutton.png')">
+                    <div class="fallback-placeholder congrats-fallback">NÚT CHÚC MỪNG</div>
+                </button>
+
+                <!-- RƯƠNG KHO BÁU ở giữa -->
+                <div class="chest-wrapper">
+                    <img src="treasurechest.png" alt="Rương kho báu" class="chest-img animate-float" onerror="handleImageError(this, 'treasurechest.png')">
+                    <div class="fallback-placeholder chest-fallback">RƯƠNG KHO BÁU</div>
+                </div>
+
+                <!-- SCRIPT THẮNG ở dưới cùng -->
+                <div class="win-dialog-box">
+                    <div class="dialog-bg-container">
+                        <img src="scriptbackgroundpage4.png" alt="Script Background Win" class="dialogue-bg" onerror="handleImageError(this, 'scriptbackgroundpage4.png')">
+                        <div class="fallback-placeholder win-fallback">SCRIPT THẮNG</div>
+                    </div>
+                    <div class="dialogue-content">
+                        <p class="dialogue-text">Chúc mừng! Bạn thật thông thái khi vượt qua tất cả câu đố của Pharaoh và tìm được Rương Kho Báu vĩ đại!</p>
+                        <button class="restart-btn">Chơi Lại</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE LOSE: THUA ================= -->
+        <div id="page-lose" class="page">
+            <div class="page-background" data-bg="backgroundpage5"></div>
+
+            <!-- Nhân vật thua: characterlose -->
+            <div class="character-container left">
+                <img src="characterlose.png" alt="Character Lose" class="character-img" onerror="handleImageError(this, 'characterlose.png')">
+                <div class="fallback-placeholder char-fallback">character lose</div>
+            </div>
+
+            <!-- SCRIPT THUA ở dưới cùng: scriptbackgroundpage5 -->
+            <div class="dialogue-box-wrapper">
+                <div class="dialogue-bg-container">
+                    <img src="scriptbackgroundpage5.png" alt="Script Background Lose" class="dialogue-bg" onerror="handleImageError(this, 'scriptbackgroundpage5.png')">
+                    <div class="fallback-placeholder lose-fallback">SCRIPT THUA</div>
+                </div>
+                <div class="dialogue-content">
+                    <p class="dialogue-text">Bạn đã hết sạch trái tim mất rồi... Pharaoh không chấp nhận những kẻ chưa đủ kiến thức để bước qua cửa ải này!</p>
+                    <button class="restart-btn">Chơi Lại</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script xử lý lỗi tải ảnh & Khởi tạo logic game -->
+    <script>
+        // Hàm này sẽ ẩn thẻ ảnh bị thiếu và hiển thị ô fallback đẹp mắt thay thế
+        function handleImageError(imageElement, filename) {
+            imageElement.style.display = 'none';
+            const fallback = imageElement.nextElementSibling;
+            if (fallback && fallback.classList.contains('fallback-placeholder')) {
+                fallback.style.display = 'flex';
+            }
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
+
