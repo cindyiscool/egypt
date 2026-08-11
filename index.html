@@ -3,18 +3,1079 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Egyptian Visual Novel</title>
+    <title>Egyptian Visual Novel - Combined</title>
     <!-- Nhúng font chữ Google để giao diện trông cao cấp và dễ đọc -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Lora:ital,wght@0,500;0,700;1,500&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <!-- Thư viện Confetti cho màn hình chiến thắng -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        /* ==========================================
+           STYLE RULES - EGYPTIAN VISUAL NOVEL
+           ========================================== */
+
+        /* --- RESET & CẤU HÌNH BAN ĐẦU --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: #0b0805;
+            color: #f5eedc;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- GAME CONTAINER (TỶ LỆ KHUNG HÌNH 16:9 CHUẨN VISUAL NOVEL) --- */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 aspect ratio */
+            max-width: 1200px;
+            max-height: 675px;
+            background-color: #120e0a;
+            border: 4px solid #cf9e2b;
+            box-shadow: 0 0 30px rgba(207, 158, 43, 0.3);
+            overflow: hidden;
+        }
+
+        /* responsive fallback cho các màn hình tỷ lệ khác */
+        @media (min-aspect-ratio: 16/9) {
+            #game-container {
+                width: 177.78vh;
+                height: 100vh;
+            }
+        }
+
+        /* --- QUẢN LÝ MÀN HÌNH (PAGES) --- */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- HỆ THỐNG NỀN (BACKGROUNDS) --- */
+        .page-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+
+        /* Lớp gradient huyền bí chủ đề Ai Cập làm fallback */
+        #page-1 .page-background {
+            background: url('backgroundpage1.png') center/cover no-repeat, linear-gradient(135deg, #1f140a 0%, #0d0602 100%);
+        }
+        #page-2 .page-background {
+            background: url('backgroundpage2.png') center/cover no-repeat, linear-gradient(180deg, #1c130d 0%, #0c0805 100%);
+        }
+        #page-3 .page-background {
+            background: url('backgroundpage3.png') center/cover no-repeat, linear-gradient(180deg, #1a1612 0%, #090807 100%);
+        }
+        #page-win .page-background {
+            background: url('backgroundwin.png') center/cover no-repeat, radial-gradient(circle, #38290f 0%, #0a0805 100%);
+        }
+        #page-lose .page-background {
+            background: url('backgroundpage5.png') center/cover no-repeat, linear-gradient(180deg, #1a0e0e 0%, #080303 100%);
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 2% 5%;
+        }
+
+        /* --- FALLBACK PLACEHOLDERS (KHI CHƯA CÓ FILE ẢNH) --- */
+        .fallback-placeholder {
+            display: none; /* Chỉ hiển thị qua script onerror */
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 14, 10, 0.85);
+            border: 2px dashed #cf9e2b;
+            border-radius: 8px;
+            color: #e6c35c;
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 5px rgba(207, 158, 43, 0.5);
+            box-shadow: inset 0 0 15px rgba(207, 158, 43, 0.2);
+            text-transform: uppercase;
+        }
+
+        /* --- TRANG CHỦ (PAGE 1) --- */
+        .logo-wrapper {
+            width: 60%;
+            height: 40%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .game-logo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .logo-fallback {
+            font-size: 32px;
+            border: 3px solid #cf9e2b;
+            letter-spacing: 4px;
+            border-radius: 0;
+            clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+        }
+
+        .game-btn-img {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 250px;
+            height: 80px;
+            outline: none;
+            transition: transform 0.2s, filter 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-btn-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .game-btn-img:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 8px rgba(230, 195, 92, 0.7));
+        }
+
+        .btn-fallback {
+            font-size: 18px;
+            border: 2px solid #cf9e2b;
+            background: linear-gradient(135deg, #1b263b 0%, #0f172a 100%);
+            color: #ffffff;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* --- TRANG NÓI CHUYỆN & CÂU HỎI (PAGES 2 & 3) --- */
+        .character-container {
+            position: absolute;
+            bottom: 0;
+            left: 4%;
+            width: 25%;
+            height: 80%;
+            z-index: 5;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .character-img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(5px 5px 15px rgba(0, 0, 0, 0.6));
+            animation: slideInFromLeft 0.5s ease-out;
+        }
+
+        .char-fallback {
+            height: 90%;
+            font-size: 24px;
+            border-radius: 8px 8px 0 0;
+            background: linear-gradient(180deg, #1f2d3d 0%, #0f172a 100%);
+            border-bottom: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dialogue-box-wrapper {
+            position: absolute;
+            bottom: 3%;
+            left: 5%;
+            right: 5%;
+            height: 25%;
+            z-index: 10;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .dialogue-bg-container, .quiz-bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .dialogue-bg, .quiz-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .dialogue-content {
+            position: relative;
+            z-index: 2;
+            padding: 2% 4%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .dialogue-text {
+            font-family: 'Lora', serif;
+            font-size: 17px;
+            line-height: 1.5;
+            color: #f7edd7;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .dialog-fallback {
+            background: rgba(167, 29, 49, 0.95);
+            border: 3px solid #000;
+            color: #ffffff;
+            font-size: 20px;
+            border-radius: 0;
+        }
+
+        .next-btn {
+            align-self: flex-end;
+            background: linear-gradient(180deg, #0d3b66 0%, #052240 100%);
+            border: 2px solid #cf9e2b;
+            color: #e6c35c;
+            padding: 6px 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .next-btn:hover {
+            background: linear-gradient(180deg, #1b4e7e 0%, #0d3b66 100%);
+            transform: translateY(-2px);
+        }
+
+        /* --- TRANG HỎI ĐÁP (PAGE 3 - QUIZ) --- */
+        .quiz-box-wrapper {
+            position: absolute;
+            bottom: 3%;
+            left: 5%;
+            right: 5%;
+            height: 38%;
+            z-index: 10;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .quiz-fallback {
+            background: rgba(167, 29, 49, 0.95);
+            border: 3px solid #000;
+        }
+
+        .quiz-content {
+            position: relative;
+            z-index: 2;
+            padding: 1.5% 3%;
+            height: 100%;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            row-gap: 8px;
+        }
+
+        .question-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 62, 126, 0.85);
+            border: 2px solid #cf9e2b;
+            padding: 6px 15px;
+            border-radius: 4px;
+        }
+
+        .question-num-tag {
+            font-family: 'Cinzel', serif;
+            color: #e6c35c;
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .question-box h2 {
+            font-size: 15px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .answer-btn {
+            position: relative;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 20px;
+            transition: transform 0.2s;
+        }
+
+        .answer-bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .answer-bg-img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+        }
+
+        .answer-fallback {
+            background: rgba(0, 62, 126, 0.95);
+            border: 2.5px solid #000;
+            border-radius: 0;
+            color: #ffffff;
+            font-weight: bold;
+            justify-content: flex-start;
+            padding-left: 20px;
+        }
+
+        .answer-text {
+            position: relative;
+            z-index: 2;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .answer-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .answer-btn:hover .answer-fallback {
+            border-color: #cf9e2b;
+            box-shadow: 0 0 10px rgba(207, 158, 43, 0.6);
+        }
+
+        .check-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%) scale(0);
+            z-index: 5;
+            font-size: 22px;
+            font-weight: bold;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .correct-icon {
+            color: #2ec4b6;
+            text-shadow: 0 0 8px rgba(46, 196, 182, 0.8);
+        }
+
+        .incorrect-icon {
+            color: #e71d36;
+            text-shadow: 0 0 8px rgba(231, 29, 54, 0.8);
+        }
+
+        .answer-btn.correct .correct-icon {
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .answer-btn.correct .answer-fallback {
+            border-color: #2ec4b6;
+            background: rgba(10, 50, 45, 0.9);
+        }
+
+        .answer-btn.incorrect .incorrect-icon {
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .answer-btn.incorrect .answer-fallback {
+            border-color: #e71d36;
+            background: rgba(60, 15, 20, 0.9);
+        }
+
+        .quiz-wrong-feedback {
+            position: relative;
+            z-index: 2;
+            padding: 3%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feedback-box {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .text-wrong {
+            font-family: 'Cinzel', serif;
+            color: #e71d36;
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(231,29,54,0.5);
+            animation: shake 0.5s;
+        }
+
+        .feedback-subtext {
+            font-size: 16px;
+            color: #f7edd7;
+        }
+
+        /* --- MẠNG / TRÁI TIM (HEARTS SYSTEM) --- */
+        #hearts-container {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            z-index: 100;
+            display: flex;
+            gap: 12px;
+        }
+
+        .heart {
+            font-size: 28px;
+            filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
+            transition: transform 0.3s ease, opacity 0.5s ease;
+        }
+
+        .heart.broken {
+            transform: scale(0.6) rotate(15deg);
+            opacity: 0.2;
+            animation: breakHeart 0.5s forwards;
+        }
+
+        /* --- TRANG THẮNG (PAGE WIN) --- */
+        .win-content-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 3% 5%;
+        }
+
+        .congrats-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 280px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .congrats-btn-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .congrats-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .congrats-fallback {
+            background: #e71d36;
+            border: 3.5px solid #000;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 0;
+            letter-spacing: 2px;
+        }
+
+        .win-dialog-box {
+            width: 100%;
+            height: 25%;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .win-fallback {
+            background: #ffb703;
+            border: 3.5px solid #000;
+            color: #000000;
+            font-size: 24px;
+            font-weight: 800;
+            border-radius: 0;
+        }
+
+        .restart-btn {
+            align-self: center;
+            background: linear-gradient(180deg, #d4af37 0%, #aa841c 100%);
+            border: 2px solid #ffffff;
+            color: #0b0805;
+            font-weight: 700;
+            padding: 8px 24px;
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(212,175,55,0.3);
+            margin-top: 10px;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(180deg, #f3d065 0%, #d4af37 100%);
+        }
+
+        /* --- TRANG THUA (PAGE LOSE) --- */
+        .lose-fallback {
+            background: #0d3b66;
+            border: 3.5px solid #000;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 800;
+            border-radius: 0;
+        }
+
+        /* --- HIỆU ỨNG ĐỘNG (ANIMATIONS) --- */
+        @keyframes slideInFromLeft {
+            0% {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes breakHeart {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.4);
+                filter: saturate(2) drop-shadow(0 0 10px rgba(255,0,0,1));
+            }
+            100% {
+                transform: scale(0.6) rotate(20deg);
+                opacity: 0.2;
+            }
+        }
+
+        /* --- FONT ĐỌC TỐT --- */
+        .font-readable {
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+        }
+
+        .text-egypt {
+            color: #fffde6;
+        }
+
+        /* ==========================================
+           CẤU HÌNH MINI-GAMES MỚI & LỒNG GIAM CÔNG CHÚA
+           ========================================== */
+
+        /* --- WORD SEARCH --- */
+        .word-search-container {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            height: 100%;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 5px;
+        }
+
+        .word-search-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            width: 60%;
+            max-width: 170px;
+            aspect-ratio: 1;
+            margin: 0 auto;
+        }
+
+        .word-search-cell {
+            background: rgba(0, 62, 126, 0.6);
+            border: 1px solid #cf9e2b;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.15s;
+            user-select: none;
+            aspect-ratio: 1;
+        }
+
+        .word-search-cell:hover {
+            background: rgba(230, 195, 92, 0.4);
+            transform: scale(1.08);
+        }
+
+        .word-search-cell.selected {
+            background: #ffb703;
+            color: #0b0805;
+            box-shadow: 0 0 8px #ffb703;
+            border-color: #ffffff;
+        }
+
+        .word-search-cell.found {
+            background: #2ec4b6;
+            color: #ffffff;
+            border-color: #2ec4b6;
+            box-shadow: 0 0 6px rgba(46, 196, 182, 0.6);
+        }
+
+        .word-search-list-panel {
+            width: 38%;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .word-search-item {
+            font-size: 11px;
+            font-weight: bold;
+            color: #f7edd7;
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 3px solid #cf9e2b;
+            padding: 3px 6px;
+            border-radius: 0 4px 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .word-search-item.found {
+            text-decoration: line-through;
+            color: #2ec4b6;
+            border-left-color: #2ec4b6;
+            opacity: 0.6;
+        }
+
+        /* --- CAMEL PUZZLE --- */
+        .camel-puzzle-container {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            width: 100%;
+            padding-bottom: 5px;
+        }
+
+        .camel-board {
+            position: relative;
+            width: 55%;
+            height: 110px;
+            border: 2px dashed #cf9e2b;
+            background: rgba(18, 14, 10, 0.6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        .camel-silhouette-bg {
+            font-size: 70px;
+            opacity: 0.12;
+            color: #e6c35c;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .camel-slots-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .camel-slot {
+            position: absolute;
+            border: 1px dashed rgba(230, 195, 92, 0.5);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 9px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-weight: bold;
+            pointer-events: auto;
+            transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
+        }
+
+        #camel-slot-1 { width: 22%; height: 28%; top: 12%; left: 10%; } /* Đầu */
+        #camel-slot-2 { width: 32%; height: 35%; top: 22%; left: 32%; } /* Thân */
+        #camel-slot-3 { width: 28%; height: 42%; top: 50%; left: 24%; } /* Chân */
+        #camel-slot-4 { width: 16%; height: 24%; top: 28%; left: 74%; } /* Đuôi */
+
+        .camel-slot.filled {
+            border: 1.5px solid #cf9e2b;
+            background: rgba(207, 158, 43, 0.85);
+            color: #0b0805;
+            font-size: 11px;
+            font-weight: 800;
+            box-shadow: 0 0 6px rgba(207, 158, 43, 0.5);
+        }
+
+        .camel-pool {
+            width: 42%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .camel-piece-btn {
+            background: linear-gradient(180deg, #0d3b66 0%, #052240 100%);
+            border: 1.5px solid #cf9e2b;
+            color: #e6c35c;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 8px 3px;
+            cursor: pointer;
+            border-radius: 4px;
+            text-align: center;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .camel-piece-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 6px rgba(230, 195, 92, 0.4);
+        }
+
+        .camel-piece-btn.used {
+            opacity: 0.15;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
+        /* Bùa Hộ Mệnh Ankh */
+        .ankh-amulet {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 26px;
+            color: #ffb703;
+            cursor: pointer;
+            text-shadow: 0 0 10px #ffb703;
+            z-index: 100;
+            transition: transform 0.2s, filter 0.2s;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .ankh-amulet:hover {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 6px #ffb703);
+        }
+
+        .ankh-amulet.activated {
+            color: #2ec4b6;
+            text-shadow: 0 0 15px #2ec4b6;
+            animation: pulseGlow 1.2s infinite alternate;
+            pointer-events: none;
+        }
+
+        .shield-halo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #2ec4b6;
+            background: rgba(46, 196, 182, 0.06);
+            z-index: 90;
+            pointer-events: none;
+            border-radius: 6px;
+            box-shadow: inset 0 0 10px rgba(46, 196, 182, 0.3);
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 3px #2ec4b6); }
+            100% { transform: scale(1.1); filter: drop-shadow(0 0 10px #2ec4b6); }
+        }
+
+        @keyframes shatterAway {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(0.1);
+                opacity: 0;
+            }
+        }
+
+        .camel-slot.shattering {
+            animation: shatterAway 0.8s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+        }
+
+        /* --- WORD UNSCRAMBLE --- */
+        .unscramble-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding-bottom: 5px;
+        }
+
+        .unscramble-slots-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            min-height: 28px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .unscramble-slot {
+            width: 28px;
+            height: 28px;
+            border-bottom: 2px solid #cf9e2b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 4px #cf9e2b;
+            text-transform: uppercase;
+        }
+
+        .unscramble-letters-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .unscramble-letter-btn {
+            background: rgba(0, 62, 126, 0.8);
+            border: 1.5px solid #cf9e2b;
+            color: #ffffff;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, transform 0.15s;
+        }
+
+        .unscramble-letter-btn:hover {
+            background: rgba(230, 195, 92, 0.4);
+            transform: scale(1.1);
+        }
+
+        .unscramble-letter-btn.used {
+            opacity: 0.1;
+            pointer-events: none;
+            transform: scale(0.9);
+        }
+
+        /* --- PRINCESS CAGE --- */
+        .cage-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            height: 52%;
+            justify-content: center;
+        }
+
+        .princess-cage {
+            position: relative;
+            width: 150px;
+            height: 120px;
+            border: 3px solid #d4af37;
+            background: radial-gradient(circle, rgba(212,175,55,0.18) 0%, rgba(18,14,10,0.7) 100%);
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .princess-inside-cage {
+            font-size: 48px;
+            text-align: center;
+            z-index: 2;
+            transition: transform 0.5s ease, filter 0.5s ease;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .princess-inside-cage.happy {
+            transform: scale(1.15) translateY(-5px);
+            filter: drop-shadow(0 0 12px rgba(255, 223, 0, 0.8));
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .cage-bars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-around;
+            z-index: 5;
+            transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease;
+            padding: 0 8px;
+        }
+
+        .cage-bar {
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(90deg, #a88726, #ffd700, #a88726);
+            border-radius: 1.5px;
+            box-shadow: 0 0 3px rgba(212, 175, 55, 0.5);
+        }
+
+        .cage-bars.opened {
+            transform: translateY(-110%);
+            opacity: 0.05;
+        }
+
+        .unlock-cage-btn {
+            background: linear-gradient(180deg, #e71d36 0%, #a80f22 100%);
+            border: 1.5px solid #ffffff;
+            color: #ffffff;
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 6px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        .unlock-cage-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(180deg, #ff4d6d 0%, #e71d36 100%);
+            box-shadow: 0 0 10px rgba(231, 29, 54, 0.6);
+        }
+
+        .shake-container {
+            animation: shake 0.5s ease-in-out;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Container chính để giữ game cố định tỷ lệ khung hình hoặc co giãn mượt mà -->
+    <!-- Container chính để giữ game cố định tỷ lệ khung hình -->
     <div id="game-container">
 
         <!-- Hệ thống hiển thị Mạng/Trái tim ở góc trên bên phải (chỉ hiện từ Trang 3 trở đi) -->
@@ -27,20 +1088,19 @@
 
         <!-- ================= PAGE 1: TRANG CHỦ ================= -->
         <div id="page-1" class="page active">
-            <!-- Nền trang chủ: backgroundpage1 -->
             <div class="page-background" data-bg="backgroundpage1"></div>
             
             <div class="content-wrapper">
-                <!-- LOGO Game: Logo -->
+                <!-- LOGO Game -->
                 <div class="logo-wrapper">
                     <img src="Logo.png" class="game-logo" alt="Logo Game" onerror="handleImageError(this, 'Logo.png')">
-                    <div class="fallback-placeholder logo-fallback">LOGO GAME</div>
+                    <div class="fallback-placeholder logo-fallback" style="display: flex;">LOGO GAME</div>
                 </div>
 
-                <!-- Nút bắt đầu: buttonpage1 -->
+                <!-- Nút bắt đầu -->
                 <button id="btn-start" class="game-btn-img">
                     <img src="buttonpage1.png" alt="Nút bấm" onerror="handleImageError(this, 'buttonpage1.png')">
-                    <div class="fallback-placeholder btn-fallback">Nút bấm</div>
+                    <div class="fallback-placeholder btn-fallback" style="display: flex;">BẮT ĐẦU</div>
                 </button>
             </div>
         </div>
@@ -49,43 +1109,43 @@
         <div id="page-2" class="page">
             <div class="page-background" data-bg="backgroundpage2"></div>
 
-            <!-- Nhân vật: characterimagepage2 -->
+            <!-- Nhân vật hướng dẫn -->
             <div class="character-container left">
                 <img src="characterimagepage2.png" alt="Character Dialogue" class="character-img" onerror="handleImageError(this, 'characterimagepage2.png')">
-                <div class="fallback-placeholder char-fallback">character</div>
+                <div class="fallback-placeholder char-fallback" style="display: flex;">PHARAOH GUIDE</div>
             </div>
 
-            <!-- Hộp thoại nói chuyện: scriptbackgroundpage2 -->
+            <!-- Hộp thoại nói chuyện -->
             <div class="dialogue-box-wrapper">
                 <div class="dialogue-bg-container">
                     <img src="scriptbackgroundpage2.png" alt="Script Background" class="dialogue-bg" onerror="handleImageError(this, 'scriptbackgroundpage2.png')">
-                    <div class="fallback-placeholder dialog-fallback">Nói chuyện</div>
+                    <div class="fallback-placeholder dialog-fallback" style="display: flex;">Nói chuyện</div>
                 </div>
                 <div class="dialogue-content">
-                    <p class="dialogue-text">Chào mừng nhà thám hiểm đến với thế giới Ai Cập cổ đại huyền bí! Hãy cùng tôi giải mã 10 câu đố cổ xưa để tìm ra kho báu nhé. Bạn đã sẵn sàng chưa?</p>
+                    <p class="dialogue-text">Chào mừng nhà thám hiểm đến với thế giới Ai Cập cổ đại huyền bí! Hãy cùng tôi giải mã các bí ẩn của các vị thần và cứu Công chúa ra khỏi lồng phép thuật nhé. Bạn đã sẵn sàng chưa?</p>
                     <button id="btn-to-quiz" class="next-btn">NEXT</button>
                 </div>
             </div>
         </div>
 
-        <!-- ================= PAGE 3: CÂU HỎI ================= -->
+        <!-- ================= PAGE 3: CÂU HỎI & TRÒ CHƠI ================= -->
         <div id="page-3" class="page">
             <div class="page-background" data-bg="backgroundpage3"></div>
 
-            <!-- Nhân vật: characterimagepage3 -->
+            <!-- Nhân vật -->
             <div class="character-container left">
                 <img src="characterimagepage3.png" alt="Character Quiz" class="character-img" onerror="handleImageError(this, 'characterimagepage3.png')">
-                <div class="fallback-placeholder char-fallback">character</div>
+                <div class="fallback-placeholder char-fallback" style="display: flex;">CHARACTER</div>
             </div>
 
-            <!-- Hộp câu hỏi & Đáp án: scriptbackgroundpage3 -->
+            <!-- Hộp câu hỏi & Đáp án -->
             <div class="quiz-box-wrapper">
                 <div class="quiz-bg-container">
                     <img src="scriptbackgroundpage3.png" alt="Script Background 3" class="quiz-bg" onerror="handleImageError(this, 'scriptbackgroundpage3.png')">
-                    <div class="fallback-placeholder quiz-fallback">nền cho câu hỏi (scriptbackgroundpage3)</div>
+                    <div class="fallback-placeholder quiz-fallback" style="display: flex;">NỀN CÂU HỎI</div>
                 </div>
                 
-                <!-- Giao diện chính của câu hỏi và đáp án -->
+                <!-- Giao diện chính của câu hỏi và đáp án trắc nghiệm -->
                 <div class="quiz-content" id="quiz-main-layout">
                     <!-- Ô chứa câu hỏi -->
                     <div class="question-box">
@@ -98,7 +1158,7 @@
                         <button class="answer-btn" data-choice="A">
                             <div class="answer-bg-container">
                                 <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
-                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                                <div class="fallback-placeholder answer-fallback" style="display: flex;">A</div>
                             </div>
                             <span class="answer-text">A. ĐápánA</span>
                             <span class="check-icon correct-icon">✔</span>
@@ -107,7 +1167,7 @@
                         <button class="answer-btn" data-choice="B">
                             <div class="answer-bg-container">
                                 <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
-                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                                <div class="fallback-placeholder answer-fallback" style="display: flex;">B</div>
                             </div>
                             <span class="answer-text">B. ĐápánB</span>
                             <span class="check-icon correct-icon">✔</span>
@@ -116,7 +1176,7 @@
                         <button class="answer-btn" data-choice="C">
                             <div class="answer-bg-container">
                                 <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
-                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                                <div class="fallback-placeholder answer-fallback" style="display: flex;">C</div>
                             </div>
                             <span class="answer-text">C. ĐápánC</span>
                             <span class="check-icon correct-icon">✔</span>
@@ -125,7 +1185,7 @@
                         <button class="answer-btn" data-choice="D">
                             <div class="answer-bg-container">
                                 <img src="answerbackground.png" alt="Answer Background" class="answer-bg-img" onerror="handleImageError(this, 'answerbackground.png')">
-                                <div class="fallback-placeholder answer-fallback">answerbackground</div>
+                                <div class="fallback-placeholder answer-fallback" style="display: flex;">D</div>
                             </div>
                             <span class="answer-text">D. ĐápánD</span>
                             <span class="check-icon correct-icon">✔</span>
@@ -134,11 +1194,77 @@
                     </div>
                 </div>
 
-                <!-- Màn hình trạng thái phụ khi chọn SAI (Nhân vật bảo Sai rồi) -->
+                <!-- Giao diện 1: Trò chơi tìm từ trong ô chữ (Word Search - Màn 3) -->
+                <div class="quiz-content hidden" id="word-search-layout">
+                    <div class="question-box">
+                        <span class="question-num-tag">Câu hỏi <span id="word-search-num">3</span>/10:</span>
+                        <h2 class="text-egypt font-readable" style="font-size: 14px;">Hãy tìm các từ ẩn (Click chữ cái ĐẦU và CUỐI của từ): <span id="word-search-targets" style="color: #ffb703; font-weight: bold;">NILE, RA, ANUBIS</span></h2>
+                    </div>
+                    <div class="word-search-container">
+                        <div class="word-search-grid" id="word-search-grid"></div>
+                        <div class="word-search-list-panel" id="word-search-list">
+                            <!-- Các từ cần tìm hiển thị ở đây -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giao diện 2: Trò chơi ghép hình lạc đà (Camel Puzzle Trap - Màn 6) -->
+                <div class="quiz-content hidden" id="camel-puzzle-layout">
+                    <div class="question-box">
+                        <span class="question-num-tag">Câu hỏi <span id="camel-puzzle-num">6</span>/10:</span>
+                        <h2 class="text-egypt font-readable" style="font-size: 13px;" id="camel-puzzle-instruction">Hãy ráp 4 mảnh ghép để tạo thành hình lạc đà!</h2>
+                    </div>
+                    <div class="camel-puzzle-container">
+                        <!-- Khung lắp ráp con lạc đà -->
+                        <div class="camel-board" id="camel-board">
+                            <!-- Khung chứa bùa hộ mệnh Ankh ẩn giấu -->
+                            <div class="ankh-amulet hidden animate-float" id="ankh-amulet" title="Nhấp vào để hóa giải bẫy của Pharaoh!">☥</div>
+                            
+                            <!-- Hào quang lá chắn -->
+                            <div class="shield-halo hidden" id="shield-halo"></div>
+
+                            <!-- Vùng bóng mờ và các slot nhận mảnh ghép -->
+                            <div class="camel-silhouette-bg">🐫</div>
+                            
+                            <div class="camel-slots-container">
+                                <div class="camel-slot" id="camel-slot-1" data-piece="1">Đầu</div>
+                                <div class="camel-slot" id="camel-slot-2" data-piece="2">Thân</div>
+                                <div class="camel-slot" id="camel-slot-3" data-piece="3">Chân</div>
+                                <div class="camel-slot" id="camel-slot-4" data-piece="4">Đuôi</div>
+                            </div>
+                        </div>
+
+                        <!-- Khay chứa các mảnh ghép của con lạc đà -->
+                        <div class="camel-pool" id="camel-pool">
+                            <button class="camel-piece-btn" id="camel-piece-1" data-piece="1">Mảnh 1: Đầu</button>
+                            <button class="camel-piece-btn" id="camel-piece-2" data-piece="2">Mảnh 2: Thân</button>
+                            <button class="camel-piece-btn" id="camel-piece-3" data-piece="3">Mảnh 3: Chân</button>
+                            <button class="camel-piece-btn" id="camel-piece-4" data-piece="4">Mảnh 4: Đuôi</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giao diện 3: Trò chơi sắp xếp chữ cái (Word Unscramble - Màn 9) -->
+                <div class="quiz-content hidden" id="word-unscramble-layout">
+                    <div class="question-box">
+                        <span class="question-num-tag">Câu hỏi <span id="unscramble-num">9</span>/10:</span>
+                        <h2 class="text-egypt font-readable" style="font-size: 13px;" id="unscramble-hint">Gợi ý: Phương pháp bảo quản thi thể cổ xưa của người Ai Cập.</h2>
+                    </div>
+                    <div class="unscramble-container">
+                        <!-- Ô trống điền chữ cái -->
+                        <div class="unscramble-slots-row" id="unscramble-slots-row"></div>
+                        <!-- Các chữ cái bị đảo lộn -->
+                        <div class="unscramble-letters-row" id="unscramble-letters-row"></div>
+                        <!-- Nút xóa reset -->
+                        <button id="btn-unscramble-clear" class="next-btn" style="align-self: center; margin-top: 4px; padding: 4px 15px; font-size: 12px;">XÓA CHỮ</button>
+                    </div>
+                </div>
+
+                <!-- Màn hình trạng thái phụ khi chọn SAI -->
                 <div class="quiz-wrong-feedback hidden" id="quiz-wrong-layout">
                     <div class="feedback-box">
-                        <h2 class="text-wrong font-readable">Sai rồi!</h2>
-                        <p class="feedback-subtext">Bạn đã bị trừ một trái tim!</p>
+                        <h2 class="text-wrong font-readable" id="wrong-title">Sai rồi!</h2>
+                        <p class="feedback-subtext" id="wrong-subtext">Bạn đã bị trừ một trái tim!</p>
                         <button id="btn-next-after-wrong" class="next-btn">TIẾP TỤC</button>
                     </div>
                 </div>
@@ -147,37 +1273,51 @@
 
         <!-- ================= PAGE WIN: THẮNG ================= -->
         <div id="page-win" class="page">
-            <!-- Nền thắng: backgroundwin -->
             <div class="page-background" data-bg="backgroundwin"></div>
 
-            <!-- Nhân vật thắng: characterimagepage4 -->
+            <!-- Nhân vật thắng -->
             <div class="character-container left">
-                <img src="characterimagepage4.png" alt="Character Win" class="character-img" onerror="handleImageError(this, 'characterimagepage4.png')">
-                <div class="fallback-placeholder char-fallback">character</div>
+                <img src="characterimagepage4.png" alt="Character Win" class="character-img" id="win-character-img" onerror="handleImageError(this, 'characterimagepage4.png')">
+                <div class="fallback-placeholder char-fallback" id="win-char-fallback" style="display: flex;">PRINCESS FREE</div>
             </div>
 
             <div class="win-content-wrapper">
                 <!-- NÚT CHÚC MỪNG ở phía trên -->
                 <button id="btn-congrats" class="congrats-btn">
                     <img src="congratsbutton.png" alt="Nút chúc mừng" class="congrats-btn-img" onerror="handleImageError(this, 'congratsbutton.png')">
-                    <div class="fallback-placeholder congrats-fallback">NÚT CHÚC MỪNG</div>
+                    <div class="fallback-placeholder congrats-fallback" style="display: flex;">NÚT CHÚC MỪNG</div>
                 </button>
 
-                <!-- RƯƠNG KHO BÁU ở giữa -->
-                <div class="chest-wrapper">
-                    <img src="treasurechest.png" alt="Rương kho báu" class="chest-img animate-float" onerror="handleImageError(this, 'treasurechest.png')">
-                    <div class="fallback-placeholder chest-fallback">RƯƠNG KHO BÁU</div>
+                <!-- LỒNG GIAM CÔNG CHÚA ở giữa -->
+                <div class="cage-wrapper" id="cage-wrapper">
+                    <div class="princess-cage" id="princess-cage">
+                        <!-- Nhân vật công chúa đứng trong lồng giam -->
+                        <div class="princess-inside-cage" id="princess-inside-cage">
+                            <span class="princess-emoji">👸</span>
+                        </div>
+                        <!-- Các song sắt lồng giam phủ CSS -->
+                        <div class="cage-bars" id="cage-bars">
+                            <div class="cage-bar"></div>
+                            <div class="cage-bar"></div>
+                            <div class="cage-bar"></div>
+                            <div class="cage-bar"></div>
+                            <div class="cage-bar"></div>
+                            <div class="cage-bar"></div>
+                        </div>
+                    </div>
+                    <!-- Nút bấm tương tác mở lồng -->
+                    <button id="btn-unlock-cage" class="unlock-cage-btn">MỞ KHÓA LỒNG</button>
                 </div>
 
                 <!-- SCRIPT THẮNG ở dưới cùng -->
                 <div class="win-dialog-box">
                     <div class="dialog-bg-container">
                         <img src="scriptbackgroundpage4.png" alt="Script Background Win" class="dialogue-bg" onerror="handleImageError(this, 'scriptbackgroundpage4.png')">
-                        <div class="fallback-placeholder win-fallback">SCRIPT THẮNG</div>
+                        <div class="fallback-placeholder win-fallback" style="display: flex;">SCRIPT THẮNG</div>
                     </div>
                     <div class="dialogue-content">
-                        <p class="dialogue-text">Chúc mừng! Bạn thật thông thái khi vượt qua tất cả câu đố của Pharaoh và tìm được Rương Kho Báu vĩ đại!</p>
-                        <button class="restart-btn">Chơi Lại</button>
+                        <p class="dialogue-text" id="win-dialogue-text">Chúc mừng! Bạn đã vượt qua 10 thử thách của Pharaoh. Nhưng nhìn xem, Công chúa đang bị nhốt trong lồng phép thuật! Hãy nhấn "MỞ KHÓA LỒNG" để giải cứu cô ấy!</p>
+                        <button class="restart-btn hidden" id="win-restart-btn">Chơi Lại</button>
                     </div>
                 </div>
             </div>
@@ -187,20 +1327,20 @@
         <div id="page-lose" class="page">
             <div class="page-background" data-bg="backgroundpage5"></div>
 
-            <!-- Nhân vật thua: characterlose -->
+            <!-- Nhân vật thua -->
             <div class="character-container left">
                 <img src="characterlose.png" alt="Character Lose" class="character-img" onerror="handleImageError(this, 'characterlose.png')">
-                <div class="fallback-placeholder char-fallback">character lose</div>
+                <div class="fallback-placeholder char-fallback" style="display: flex;">GAME OVER</div>
             </div>
 
-            <!-- SCRIPT THUA ở dưới cùng: scriptbackgroundpage5 -->
+            <!-- SCRIPT THUA ở dưới cùng -->
             <div class="dialogue-box-wrapper">
                 <div class="dialogue-bg-container">
                     <img src="scriptbackgroundpage5.png" alt="Script Background Lose" class="dialogue-bg" onerror="handleImageError(this, 'scriptbackgroundpage5.png')">
-                    <div class="fallback-placeholder lose-fallback">SCRIPT THUA</div>
+                    <div class="fallback-placeholder lose-fallback" style="display: flex;">SCRIPT THUA</div>
                 </div>
                 <div class="dialogue-content">
-                    <p class="dialogue-text">Bạn đã hết sạch trái tim mất rồi... Pharaoh không chấp nhận những kẻ chưa đủ kiến thức để bước qua cửa ải này!</p>
+                    <p class="dialogue-text">Bạn đã hết sạch trái tim mất rồi... Pharaoh không chấp nhận những kẻ chưa đủ kiến thức và sự tinh tế để bước qua cửa ải này!</p>
                     <button class="restart-btn">Chơi Lại</button>
                 </div>
             </div>
@@ -219,6 +1359,765 @@
             }
         }
     </script>
-    <script src="script.js"></script>
+    <script>
+        // ==========================================
+        // GAME LOGIC - EGYPTIAN VISUAL NOVEL
+        // ==========================================
+
+        const stages = [
+            {
+                level: 1,
+                type: "quiz",
+                question: "Tượng Nhân Sư ở Giza có thân là con gì?",
+                answers: {
+                    A: "A. Sư tử (Đáp án đúng)",
+                    B: "B. Đại bàng",
+                    C: "C. Chim ưng",
+                    D: "D. Nhân mã"
+                },
+                correct: "A"
+            },
+            {
+                level: 2,
+                type: "quiz",
+                question: "Con sông nào chảy dọc qua lãnh thổ Ai Cập cổ đại?",
+                answers: {
+                    A: "A. Sông Amazon",
+                    B: "B. Sông Nile (Đáp án đúng)",
+                    C: "C. Sông Hằng",
+                    D: "D. Sông Mê Kông"
+                },
+                correct: "B"
+            },
+            {
+                level: 3,
+                type: "word-search",
+                gridSize: 8,
+                grid: [
+                    ['A', 'N', 'U', 'B', 'I', 'S', 'X', 'Y'],
+                    ['O', 'N', 'I', 'L', 'E', 'P', 'Q', 'R'],
+                    ['U', 'V', 'R', 'A', 'W', 'X', 'Y', 'Z'],
+                    ['H', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'],
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+                    ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'],
+                    ['Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'],
+                    ['Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F']
+                ],
+                words: [
+                    { word: "ANUBIS", start: {r: 0, c: 0}, end: {r: 0, c: 5} },
+                    { word: "NILE", start: {r: 1, c: 1}, end: {r: 1, c: 4} },
+                    { word: "RA", start: {r: 2, c: 2}, end: {r: 2, c: 3} }
+                ]
+            },
+            {
+                level: 4,
+                type: "quiz",
+                question: "Vị vua nữ nổi tiếng nhất Ai Cập cổ đại là ai?",
+                answers: {
+                    A: "A. Nữ hoàng Victoria",
+                    B: "B. Nữ vương Elizabeth",
+                    C: "C. Cleopatra (Đáp án đúng)",
+                    D: "D. Võ Tắc Thiên"
+                },
+                correct: "C"
+            },
+            {
+                level: 5,
+                type: "quiz",
+                question: "Kim Tự Tháp lớn nhất tại Giza được xây dựng cho Pharaoh nào?",
+                answers: {
+                    A: "A. Pharaoh Tutankhamun",
+                    B: "B. Pharaoh Ramesses II",
+                    C: "C. Pharaoh Khufu (Đáp án đúng)",
+                    D: "D. Pharaoh Akhenaten"
+                },
+                correct: "C"
+            },
+            {
+                level: 6,
+                type: "camel-puzzle",
+                totalPieces: 4
+            },
+            {
+                level: 7,
+                type: "quiz",
+                question: "Người Ai Cập cổ đại ướp xác với mục đích gì?",
+                answers: {
+                    A: "A. Để trưng bày nghệ thuật",
+                    B: "B. Giúp giữ vệ sinh môi trường",
+                    C: "C. Tin vào sự bất tử và thế giới bên kia (Đáp án đúng)",
+                    D: "D. Để làm phân bón nông nghiệp"
+                },
+                correct: "C"
+            },
+            {
+                level: 8,
+                type: "quiz",
+                question: "Chữ viết của người Ai Cập cổ đại được gọi là gì?",
+                answers: {
+                    A: "A. Chữ Hán",
+                    B: "B. Chữ Nêm",
+                    C: "C. Chữ Tượng Hình (Đáp án đúng)",
+                    D: "D. Chữ Latinh"
+                },
+                correct: "C"
+            },
+            {
+                level: 9,
+                type: "word-unscramble",
+                word: "XACUOP",
+                displayWord: "XÁC ƯỚP",
+                letters: ["Ư", "X", "Ớ", "Á", "P", "C"],
+                hint: "Gợi ý: Phương pháp bảo quản thi thể cổ xưa của người Ai Cập."
+            },
+            {
+                level: 10,
+                type: "quiz",
+                question: "Vị thần tối cao đại diện cho Thần Mặt Trời của Ai Cập là?",
+                answers: {
+                    A: "A. Thần Ra (Đáp án đúng)",
+                    B: "B. Thần Anubis",
+                    C: "C. Thần Osiris",
+                    D: "D. Thần Horus"
+                },
+                correct: "A"
+            }
+        ];
+
+        // --- TRẠNG THÁI GAME ---
+        let currentQuestionIndex = 0;
+        let lives = 4;
+
+        let wordSearchSelectedStart = null;
+        let wordSearchSelectedEnd = null;
+        let wordSearchFoundWords = [];
+
+        let camelPlacedPieces = [false, false, false, false];
+        let camelTrapDisarmed = false;
+
+        let unscrambleSelectedLetters = [];
+        let unscrambleUsedIndices = [];
+
+        // --- DOM Elements ---
+        const pages = {
+            1: document.getElementById('page-1'),
+            2: document.getElementById('page-2'),
+            3: document.getElementById('page-3'),
+            win: document.getElementById('page-win'),
+            lose: document.getElementById('page-lose')
+        };
+
+        const heartsContainer = document.getElementById('hearts-container');
+        const quizMainLayout = document.getElementById('quiz-main-layout');
+        const quizWrongLayout = document.getElementById('quiz-wrong-layout');
+
+        const questionText = document.getElementById('question-text');
+        const currentQuestionNumEl = document.getElementById('current-question-num');
+        const answerButtons = document.querySelectorAll('.answer-btn');
+
+        // --- HÀM CHUYỂN TRANG ---
+        function navigateToPage(pageKey) {
+            Object.values(pages).forEach(page => {
+                page.classList.remove('active');
+            });
+
+            pages[pageKey].classList.add('active');
+
+            // Quản lý hiển thị thanh Trái Tim
+            if (pageKey === '3') {
+                heartsContainer.classList.remove('hidden');
+            } else {
+                heartsContainer.classList.add('hidden');
+            }
+        }
+
+        // --- CẬP NHẬT TRÁI TIM ---
+        function updateHeartsUI() {
+            for (let i = 1; i <= 4; i++) {
+                const heartEl = document.getElementById(`heart-${i}`);
+                if (i <= lives) {
+                    heartEl.classList.remove('broken');
+                    heartEl.textContent = '❤️';
+                } else {
+                    heartEl.classList.add('broken');
+                    heartEl.textContent = '🖤';
+                }
+            }
+        }
+
+        // --- RENDERING LEVELS ---
+        function renderQuestion() {
+            quizMainLayout.classList.add('hidden');
+            quizWrongLayout.classList.add('hidden');
+            document.getElementById('word-search-layout').classList.add('hidden');
+            document.getElementById('camel-puzzle-layout').classList.add('hidden');
+            document.getElementById('word-unscramble-layout').classList.add('hidden');
+
+            const stage = stages[currentQuestionIndex];
+
+            if (stage.type === 'quiz') {
+                quizMainLayout.classList.remove('hidden');
+                currentQuestionNumEl.textContent = currentQuestionIndex + 1;
+                questionText.textContent = stage.question;
+
+                answerButtons.forEach(btn => {
+                    const choice = btn.getAttribute('data-choice');
+                    const textSpan = btn.querySelector('.answer-text');
+                    textSpan.textContent = stage.answers[choice];
+                    btn.classList.remove('correct', 'incorrect');
+                    btn.disabled = false;
+                });
+
+            } else if (stage.type === 'word-search') {
+                document.getElementById('word-search-layout').classList.remove('hidden');
+                document.getElementById('word-search-num').textContent = currentQuestionIndex + 1;
+                initWordSearch(stage);
+
+            } else if (stage.type === 'camel-puzzle') {
+                document.getElementById('camel-puzzle-layout').classList.remove('hidden');
+                document.getElementById('camel-puzzle-num').textContent = currentQuestionIndex + 1;
+                initCamelPuzzle(stage);
+
+            } else if (stage.type === 'word-unscramble') {
+                document.getElementById('word-unscramble-layout').classList.remove('hidden');
+                document.getElementById('unscramble-num').textContent = currentQuestionIndex + 1;
+                initWordUnscramble(stage);
+            }
+        }
+
+        // --- WORD SEARCH LOGIC ---
+        function initWordSearch(stage) {
+            wordSearchSelectedStart = null;
+            wordSearchSelectedEnd = null;
+            wordSearchFoundWords = [];
+
+            const gridContainer = document.getElementById('word-search-grid');
+            gridContainer.innerHTML = '';
+
+            for (let r = 0; r < stage.gridSize; r++) {
+                for (let c = 0; c < stage.gridSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('word-search-cell');
+                    cell.textContent = stage.grid[r][c];
+                    cell.setAttribute('data-r', r);
+                    cell.setAttribute('data-c', c);
+                    cell.addEventListener('click', handleWordSearchCellClick);
+                    gridContainer.appendChild(cell);
+                }
+            }
+
+            const listPanel = document.getElementById('word-search-list');
+            listPanel.innerHTML = '';
+            stage.words.forEach(w => {
+                const item = document.createElement('div');
+                item.classList.add('word-search-item');
+                item.id = `ws-item-${w.word}`;
+                item.textContent = w.word;
+                listPanel.appendChild(item);
+            });
+        }
+
+        function handleWordSearchCellClick(e) {
+            const cell = e.currentTarget;
+            const r = parseInt(cell.getAttribute('data-r'));
+            const c = parseInt(cell.getAttribute('data-c'));
+            const stage = stages[currentQuestionIndex];
+            const cells = document.querySelectorAll('.word-search-cell');
+
+            if (!wordSearchSelectedStart) {
+                wordSearchSelectedStart = { r, c };
+                cell.classList.add('selected');
+            } else {
+                wordSearchSelectedEnd = { r, c };
+
+                if (wordSearchSelectedStart.r === r && wordSearchSelectedStart.c === c) {
+                    wordSearchSelectedStart = null;
+                    wordSearchSelectedEnd = null;
+                    cell.classList.remove('selected');
+                    return;
+                }
+
+                let matchedWord = null;
+                stage.words.forEach(w => {
+                    const matchNormal = (wordSearchSelectedStart.r === w.start.r && wordSearchSelectedStart.c === w.start.c &&
+                                         wordSearchSelectedEnd.r === w.end.r && wordSearchSelectedEnd.c === w.end.c);
+                    const matchReverse = (wordSearchSelectedEnd.r === w.start.r && wordSearchSelectedEnd.c === w.start.c &&
+                                          wordSearchSelectedStart.r === w.end.r && wordSearchSelectedStart.c === w.end.c);
+                    if (matchNormal || matchReverse) {
+                        matchedWord = w;
+                    }
+                });
+
+                if (matchedWord && !wordSearchFoundWords.includes(matchedWord.word)) {
+                    wordSearchFoundWords.push(matchedWord.word);
+                    highlightWordCells(matchedWord.start, matchedWord.end, 'found');
+
+                    const listItem = document.getElementById(`ws-item-${matchedWord.word}`);
+                    if (listItem) {
+                        listItem.classList.add('found');
+                    }
+
+                    triggerConfetti(0.15, { spread: 45 });
+
+                    if (wordSearchFoundWords.length === stage.words.length) {
+                        setTimeout(() => {
+                            goToNextStep();
+                        }, 1200);
+                    }
+                } else {
+                    cells.forEach(el => {
+                        if (el.classList.contains('selected') || el === cell) {
+                            el.style.background = '#e71d36';
+                            setTimeout(() => {
+                                el.style.background = '';
+                            }, 500);
+                        }
+                    });
+                }
+
+                cells.forEach(el => el.classList.remove('selected'));
+                wordSearchSelectedStart = null;
+                wordSearchSelectedEnd = null;
+            }
+        }
+
+        function highlightWordCells(start, end, className) {
+            const cells = document.querySelectorAll('.word-search-cell');
+            const dr = Math.sign(end.r - start.r);
+            const dc = Math.sign(end.c - start.c);
+
+            let currR = start.r;
+            let currC = start.c;
+
+            while (true) {
+                cells.forEach(cell => {
+                    const r = parseInt(cell.getAttribute('data-r'));
+                    const c = parseInt(cell.getAttribute('data-c'));
+                    if (r === currR && c === currC) {
+                        cell.classList.add(className);
+                    }
+                });
+
+                if (currR === end.r && currC === end.c) break;
+                currR += dr;
+                currC += dc;
+            }
+        }
+
+        // --- CAMEL PUZZLE LOGIC ---
+        function initCamelPuzzle(stage) {
+            camelPlacedPieces = [false, false, false, false];
+            camelTrapDisarmed = false;
+
+            const ankh = document.getElementById('ankh-amulet');
+            ankh.classList.add('hidden');
+            ankh.classList.remove('activated');
+
+            const shield = document.getElementById('shield-halo');
+            shield.classList.add('hidden');
+
+            const instruction = document.getElementById('camel-puzzle-instruction');
+            instruction.textContent = "Hãy ráp 4 mảnh ghép để tạo thành hình lạc đà!";
+            instruction.style.color = "";
+
+            for (let i = 1; i <= 4; i++) {
+                const slot = document.getElementById(`camel-slot-${i}`);
+                slot.classList.remove('filled', 'shattering');
+                slot.style.display = 'flex';
+                slot.style.removeProperty('--x');
+                slot.style.removeProperty('--y');
+                slot.style.removeProperty('--r');
+            }
+
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`camel-piece-${i}`);
+                btn.classList.remove('used');
+                btn.disabled = false;
+            }
+        }
+
+        function resetCamelPuzzleAfterTrap() {
+            camelPlacedPieces = [false, false, false, false];
+
+            const ankh = document.getElementById('ankh-amulet');
+            ankh.classList.remove('hidden');
+            ankh.classList.remove('activated');
+
+            const shield = document.getElementById('shield-halo');
+            shield.classList.add('hidden');
+
+            const instruction = document.getElementById('camel-puzzle-instruction');
+            instruction.textContent = "Hãy nhấp vào Bùa Hộ Mệnh Ankh phát sáng để hóa giải bẫy trước!";
+            instruction.style.color = "#ffb703";
+
+            for (let i = 1; i <= 4; i++) {
+                const slot = document.getElementById(`camel-slot-${i}`);
+                slot.classList.remove('filled', 'shattering');
+                slot.style.display = 'flex';
+                slot.style.removeProperty('--x');
+                slot.style.removeProperty('--y');
+                slot.style.removeProperty('--r');
+            }
+
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`camel-piece-${i}`);
+                btn.classList.remove('used');
+                btn.disabled = false;
+            }
+        }
+
+        function handleCamelPieceClick(pieceId) {
+            const index = pieceId - 1;
+            if (camelPlacedPieces[index]) return;
+
+            camelPlacedPieces[index] = true;
+
+            const slot = document.getElementById(`camel-slot-${pieceId}`);
+            slot.classList.add('filled');
+
+            const btn = document.getElementById(`camel-piece-${pieceId}`);
+            btn.classList.add('used');
+
+            const placedCount = camelPlacedPieces.filter(x => x).length;
+
+            if (placedCount === 4) {
+                if (!camelTrapDisarmed) {
+                    triggerCamelTrap();
+                } else {
+                    const instruction = document.getElementById('camel-puzzle-instruction');
+                    instruction.textContent = "Tuyệt vời! Chú lạc đà đã được ráp hoàn thành an toàn!";
+                    instruction.style.color = "#2ec4b6";
+
+                    document.querySelectorAll('.camel-piece-btn').forEach(b => b.disabled = true);
+
+                    triggerConfetti(0.35, { spread: 60 });
+                    setTimeout(() => {
+                        goToNextStep();
+                    }, 1600);
+                }
+            }
+        }
+
+        function triggerCamelTrap() {
+            lives--;
+            updateHeartsUI();
+
+            const directions = [
+                { x: '-150px', y: '-90px', r: '-180deg' },
+                { x: '120px', y: '-140px', r: '240deg' },
+                { x: '-90px', y: '130px', r: '-270deg' },
+                { x: '160px', y: '90px', r: '180deg' }
+            ];
+
+            for (let i = 1; i <= 4; i++) {
+                const slot = document.getElementById(`camel-slot-${i}`);
+                slot.style.setProperty('--x', directions[i - 1].x);
+                slot.style.setProperty('--y', directions[i - 1].y);
+                slot.style.setProperty('--r', directions[i - 1].r);
+                slot.classList.add('shattering');
+            }
+
+            const gameContainer = document.getElementById('game-container');
+            gameContainer.classList.add('shake-container');
+            setTimeout(() => {
+                gameContainer.classList.remove('shake-container');
+            }, 500);
+
+            setTimeout(() => {
+                quizMainLayout.classList.add('hidden');
+                document.getElementById('camel-puzzle-layout').classList.add('hidden');
+                quizWrongLayout.classList.remove('hidden');
+
+                const wrongTitle = document.getElementById('wrong-title');
+                const wrongSubtext = document.getElementById('wrong-subtext');
+
+                wrongTitle.textContent = "BẪY CỦA PHARAOH!";
+                wrongSubtext.textContent = "Bức ảnh lạc đà đã bị Pharaoh kích nổ tung thành trăm mảnh! Bạn bị mất 1 mạng!";
+            }, 800);
+        }
+
+        document.getElementById('ankh-amulet').addEventListener('click', () => {
+            camelTrapDisarmed = true;
+            const ankh = document.getElementById('ankh-amulet');
+            ankh.classList.add('activated');
+
+            const shield = document.getElementById('shield-halo');
+            shield.classList.remove('hidden');
+
+            const instruction = document.getElementById('camel-puzzle-instruction');
+            instruction.textContent = "Lá chắn kích hoạt! Hãy ghép mảnh thứ 4 ngay.";
+            instruction.style.color = "#2ec4b6";
+        });
+
+        document.querySelectorAll('.camel-piece-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.currentTarget.getAttribute('data-piece'));
+                handleCamelPieceClick(id);
+            });
+        });
+
+        // --- WORD UNSCRAMBLE LOGIC ---
+        function initWordUnscramble(stage) {
+            unscrambleSelectedLetters = [];
+            unscrambleUsedIndices = [];
+
+            const slotsRow = document.getElementById('unscramble-slots-row');
+            slotsRow.innerHTML = '';
+            for (let i = 0; i < stage.word.length; i++) {
+                const slot = document.createElement('div');
+                slot.classList.add('unscramble-slot');
+                slot.textContent = '_';
+                slotsRow.appendChild(slot);
+            }
+
+            const lettersRow = document.getElementById('unscramble-letters-row');
+            lettersRow.innerHTML = '';
+            stage.letters.forEach((l, idx) => {
+                const btn = document.createElement('button');
+                btn.classList.add('unscramble-letter-btn');
+                btn.textContent = l;
+                btn.setAttribute('data-index', idx);
+                btn.addEventListener('click', handleUnscrambleLetterClick);
+                lettersRow.appendChild(btn);
+            });
+        }
+
+        function handleUnscrambleLetterClick(e) {
+            const btn = e.currentTarget;
+            const index = parseInt(btn.getAttribute('data-index'));
+            const stage = stages[currentQuestionIndex];
+
+            if (unscrambleUsedIndices.includes(index)) return;
+
+            unscrambleUsedIndices.push(index);
+            unscrambleSelectedLetters.push(btn.textContent);
+            btn.classList.add('used');
+
+            const slots = document.querySelectorAll('.unscramble-slot');
+            unscrambleSelectedLetters.forEach((char, idx) => {
+                slots[idx].textContent = char;
+            });
+
+            if (unscrambleSelectedLetters.length === stage.word.length) {
+                const spelledWord = unscrambleSelectedLetters.join('').replace(/\s+/g, '');
+                const targetWord = stage.displayWord.replace(/\s+/g, '');
+
+                if (spelledWord === targetWord) {
+                    slots.forEach(s => {
+                        s.style.color = '#2ec4b6';
+                        s.style.borderBottomColor = '#2ec4b6';
+                    });
+                    triggerConfetti(0.25, { spread: 50 });
+                    setTimeout(() => {
+                        goToNextStep();
+                    }, 1500);
+                } else {
+                    lives--;
+                    updateHeartsUI();
+
+                    slots.forEach(s => {
+                        s.style.color = '#e71d36';
+                        s.style.borderBottomColor = '#e71d36';
+                    });
+
+                    setTimeout(() => {
+                        quizMainLayout.classList.add('hidden');
+                        document.getElementById('word-unscramble-layout').classList.add('hidden');
+                        quizWrongLayout.classList.remove('hidden');
+
+                        const wrongTitle = document.getElementById('wrong-title');
+                        const wrongSubtext = document.getElementById('wrong-subtext');
+
+                        wrongTitle.textContent = "GIẢI MÃ THẤT BẠI!";
+                        wrongSubtext.textContent = "Bạn đã xếp sai từ khóa cổ xưa và bị Pharaoh trừ mất 1 mạng!";
+                    }, 800);
+                }
+            }
+        }
+
+        document.getElementById('btn-unscramble-clear').addEventListener('click', () => {
+            unscrambleSelectedLetters = [];
+            unscrambleUsedIndices = [];
+
+            const slots = document.querySelectorAll('.unscramble-slot');
+            slots.forEach(s => {
+                s.textContent = '_';
+                s.style.color = '';
+                s.style.borderBottomColor = '';
+            });
+
+            const letterBtns = document.querySelectorAll('.unscramble-letter-btn');
+            letterBtns.forEach(b => {
+                b.classList.remove('used');
+            });
+        });
+
+        // --- ANSWER CLICKS (QUIZ) ---
+        function handleAnswerClick(e) {
+            const selectedBtn = e.currentTarget;
+            const selectedChoice = selectedBtn.getAttribute('data-choice');
+            const correctChoice = stages[currentQuestionIndex].correct;
+
+            answerButtons.forEach(btn => btn.disabled = true);
+
+            if (selectedChoice === correctChoice) {
+                selectedBtn.classList.add('correct');
+                setTimeout(() => {
+                    goToNextStep();
+                }, 1500);
+            } else {
+                selectedBtn.classList.add('incorrect');
+                lives--;
+                updateHeartsUI();
+
+                setTimeout(() => {
+                    quizMainLayout.classList.add('hidden');
+                    quizWrongLayout.classList.remove('hidden');
+
+                    const wrongTitle = document.getElementById('wrong-title');
+                    const wrongSubtext = document.getElementById('wrong-subtext');
+
+                    wrongTitle.textContent = "SAI RỒI!";
+                    wrongSubtext.textContent = "Câu trả lời của bạn không chính xác. Bạn bị trừ mất 1 mạng!";
+                }, 800);
+            }
+        }
+
+        // --- STEP CONTROL ---
+        function goToNextStep() {
+            if (lives <= 0) {
+                navigateToPage('lose');
+                return;
+            }
+
+            if (currentQuestionIndex >= 9) {
+                navigateToPage('win');
+                document.getElementById('cage-bars').classList.remove('opened');
+                const princess = document.getElementById('princess-inside-cage');
+                princess.classList.remove('happy');
+                princess.querySelector('.princess-emoji').textContent = '🥺';
+                
+                document.getElementById('btn-unlock-cage').classList.remove('hidden');
+                document.getElementById('win-restart-btn').classList.add('hidden');
+                document.getElementById('win-dialogue-text').textContent = "Chúc mừng! Bạn đã vượt qua 10 thử thách của Pharaoh. Nhưng nhìn xem, Công chúa đang bị nhốt trong lồng phép thuật! Hãy nhấn \"MỞ KHÓA LỒNG\" để giải cứu cô ấy!";
+
+                triggerConfetti(0.25, { spread: 60, startVelocity: 40 });
+                return;
+            }
+
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        // --- PRINCESS RESCUE ---
+        document.getElementById('btn-unlock-cage').addEventListener('click', () => {
+            document.getElementById('cage-bars').classList.add('opened');
+
+            const princess = document.getElementById('princess-inside-cage');
+            princess.classList.add('happy');
+            princess.querySelector('.princess-emoji').textContent = '👸✨🥰';
+
+            document.getElementById('btn-unlock-cage').classList.add('hidden');
+            document.getElementById('win-restart-btn').classList.remove('hidden');
+
+            document.getElementById('win-dialogue-text').textContent = "Cảm ơn nhà thám hiểm tài ba và dũng cảm! Bạn đã hóa giải phong ấn phép thuật của Pharaoh và cứu ta! Hãy cùng nhau nhận lấy kho báu và trở về nhé!";
+
+            triggerConfetti(1.5, { spread: 110, startVelocity: 45 });
+            setTimeout(() => {
+                confetti({
+                    particleCount: 70,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 }
+                });
+            }, 200);
+            setTimeout(() => {
+                confetti({
+                    particleCount: 70,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 }
+                });
+            }, 400);
+        });
+
+        // --- CONFETTI ---
+        function triggerConfetti(scalar = 1, options = {}) {
+            try {
+                confetti({
+                    particleCount: Math.floor(80 * scalar),
+                    angle: 90,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#cf9e2b', '#e6c35c', '#003e7e', '#ffb703', '#e71d36'],
+                    ...options
+                });
+            } catch (e) {
+                console.log("Thư viện confetti chưa tải kịp.");
+            }
+        }
+
+        // --- RESET GAME ---
+        function resetGame() {
+            lives = 4;
+            currentQuestionIndex = 0;
+            updateHeartsUI();
+            
+            document.getElementById('cage-bars').classList.remove('opened');
+            const princess = document.getElementById('princess-inside-cage');
+            princess.classList.remove('happy');
+            princess.querySelector('.princess-emoji').textContent = '🥺';
+            document.getElementById('btn-unlock-cage').classList.remove('hidden');
+            document.getElementById('win-restart-btn').classList.add('hidden');
+
+            navigateToPage(1);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('btn-start').addEventListener('click', () => {
+            navigateToPage(2);
+        });
+
+        document.getElementById('btn-to-quiz').addEventListener('click', () => {
+            navigateToPage(3);
+            renderQuestion();
+        });
+
+        answerButtons.forEach(btn => {
+            btn.addEventListener('click', handleAnswerClick);
+        });
+
+        document.getElementById('btn-next-after-wrong').addEventListener('click', () => {
+            if (lives <= 0) {
+                navigateToPage('lose');
+                return;
+            }
+
+            const stage = stages[currentQuestionIndex];
+            if (stage.type === 'camel-puzzle' && !camelTrapDisarmed) {
+                quizWrongLayout.classList.add('hidden');
+                document.getElementById('camel-puzzle-layout').classList.remove('hidden');
+                resetCamelPuzzleAfterTrap();
+            } else if (stage.type === 'word-unscramble') {
+                quizWrongLayout.classList.add('hidden');
+                document.getElementById('word-unscramble-layout').classList.remove('hidden');
+                initWordUnscramble(stage);
+            } else {
+                goToNextStep();
+            }
+        });
+
+        document.getElementById('btn-congrats').addEventListener('click', () => {
+            triggerConfetti(1.2, { spread: 100, startVelocity: 45 });
+        });
+
+        document.querySelectorAll('.restart-btn').forEach(btn => {
+            btn.addEventListener('click', resetGame);
+        });
+        document.getElementById('win-restart-btn').addEventListener('click', resetGame);
+
+        // Khởi tạo
+        updateHeartsUI();
+    </script>
 </body>
 </html>
